@@ -23,14 +23,15 @@ per entropy stratum. Run:
 
 ```bash
 pip install numpy pandas
-pip install https://github.com/mfrdixon/BeliefBench-Python/releases/download/v0.3.0/beliefbench-0.3.0-py3-none-any.whl
+pip install https://github.com/mfrdixon/BeliefBench-Python/releases/download/v0.4.0/beliefbench-0.4.0-py3-none-any.whl
 python examples/run_financial_full.py
 ```
 
 The runner audits entropy balance, combines all seed outputs, and writes 95%
 cluster-bootstrap intervals with `(seed, scenario_id)` as the resampling unit.
-Three seed jobs run concurrently, and each server job evaluates five repeated
-LLM measurements concurrently. Adjust `seed_concurrency` and `concurrency` to
+Three seed jobs run concurrently, and each server job evaluates up to twenty
+measurement units concurrently across scenarios, views, methods, and repeats.
+Completed seed archives are reused after interruption. Adjust `seed_concurrency` and `concurrency` to
 respect provider rate limits and the Render instance size.
 It can reserve up to 291,900 output tokens per seed and 2,043,300 across the full
 study; review provider cost and Render duration before starting it.

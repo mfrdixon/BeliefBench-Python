@@ -4,7 +4,7 @@ This public repository contains only the thin hosted-service client. The
 probabilistic benchmark engine is not distributed with the package.
 
 ```bash
-pip install https://github.com/mfrdixon/BeliefBench-Python/releases/download/v0.3.0/beliefbench-0.3.0-py3-none-any.whl
+pip install https://github.com/mfrdixon/BeliefBench-Python/releases/download/v0.4.0/beliefbench-0.4.0-py3-none-any.whl
 export OPENAI_API_KEY='...'
 export BELIEFBENCH_SERVICE_TOKEN='...'
 export BELIEFBENCH_API_URL='https://beliefbench-api.onrender.com'

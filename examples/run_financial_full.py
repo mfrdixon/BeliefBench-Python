@@ -17,9 +17,20 @@ study=spec.pop("study"); seeds=study["seeds"]
 accuracy=[]; decisions=[]
 def run_seed(seed):
     config=dict(spec); config["seed"]=seed
+    archive=OUTPUT/f"seed-{seed}.zip"; folder=OUTPUT/f"seed-{seed}"
+    if archive.exists() and not (folder/"belief_accuracy.csv").exists():
+        try:
+            folder.mkdir(exist_ok=True)
+            with zipfile.ZipFile(archive) as zf: zf.extractall(folder)
+        except zipfile.BadZipFile:
+            archive.unlink()
+    if archive.exists() and (folder/"belief_accuracy.csv").exists() and (folder/"decision_consistency.csv").exists():
+        a=pd.read_csv(folder/"belief_accuracy.csv"); a["seed"]=seed
+        d=pd.read_csv(folder/"decision_consistency.csv"); d["seed"]=seed
+        return a,d
     with BeliefBench(timeout=7200) as client:
-        archive=client.run(config,OUTPUT/f"seed-{seed}.zip",client_request_id=f"financial-full-{seed}",show_progress=False)
-    folder=OUTPUT/f"seed-{seed}"; folder.mkdir(exist_ok=True)
+        archive=client.run(config,archive,client_request_id=f"financial-full-{seed}",show_progress=False)
+    folder.mkdir(exist_ok=True)
     with zipfile.ZipFile(archive) as zf: zf.extractall(folder)
     a=pd.read_csv(folder/"belief_accuracy.csv"); a["seed"]=seed
     d=pd.read_csv(folder/"decision_consistency.csv"); d["seed"]=seed
