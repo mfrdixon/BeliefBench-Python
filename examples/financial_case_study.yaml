@@ -2,7 +2,7 @@ seed: 20260710
 scenarios: 1
 repeats: 2
 trajectory_length: 1
-model: gpt-5.4-mini
+model: gpt-4.1-mini
 llm_mode: api
 max_output_tokens: 100
 standard_rag_top_k: 5
