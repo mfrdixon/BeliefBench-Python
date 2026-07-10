@@ -29,7 +29,7 @@ python examples/run_financial_full.py
 
 The runner audits entropy balance, combines all seed outputs, and writes 95%
 cluster-bootstrap intervals with `(seed, scenario_id)` as the resampling unit.
-Three seed jobs run concurrently, and each server job evaluates up to twenty
+Three seed jobs run concurrently, and each server job evaluates up to eight
 measurement units concurrently across scenarios, views, methods, and repeats.
 Completed seed archives are reused after interruption. Adjust `seed_concurrency` and `concurrency` to
 respect provider rate limits and the Render instance size.
