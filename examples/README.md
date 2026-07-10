@@ -32,6 +32,11 @@ python examples/run_financial_full.py
 
 The runner audits entropy balance, combines all seed outputs, and writes 95%
 cluster-bootstrap intervals with `(seed, scenario_id)` as the resampling unit.
+Every hosted run now also emits `plots/beliefbench_summary_dashboard.png`, an
+executive infographic with a labeled `1 - mean JS` fidelity dial, calibration,
+stability, decision-coherence and reference-action cards, evidence-degradation
+bars, and a matched reference-view baseline comparison. The dial is deliberately
+not described as a universal trust score.
 Three seed jobs run concurrently, and each server job evaluates up to eight
 measurement units concurrently across scenarios, views, methods, and repeats.
 Completed seed archives are reused after interruption. Adjust `seed_concurrency` and `concurrency` to
