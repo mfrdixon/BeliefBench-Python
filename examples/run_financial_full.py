@@ -1,5 +1,7 @@
 from __future__ import annotations
 import zipfile
+import threading
+from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor,as_completed
 from pathlib import Path
 import numpy as np
@@ -16,6 +18,8 @@ study=spec.pop("study"); seeds=study["seeds"]
 
 accuracy=[]; decisions=[]
 progress_ref=None; seed_tasks={}
+log_lock=threading.Lock(); last_percent={seed:-1 for seed in seeds}; completed_units={seed:0 for seed in seeds}
+units_per_seed=int(spec["balanced_entropy"]["per_stratum"])*3*3*2*int(spec["repeats"])+int(spec["trajectory_length"])*2
 def run_seed(seed):
     config=dict(spec); config["seed"]=seed
     archive=OUTPUT/f"seed-{seed}.zip"; folder=OUTPUT/f"seed-{seed}"
@@ -31,8 +35,14 @@ def run_seed(seed):
         return a,d
     with BeliefBench(timeout=7200) as client:
         def update(state):
+            completed_units[seed]=int(state["completed"]); percent=int(state["percent"])
             if progress_ref is not None:
                 progress_ref.update(seed_tasks[seed],total=max(1,state["total"]),completed=state["completed"],description=f"Seed {seed} · {state['phase']}")
+            if percent > last_percent[seed]:
+                with log_lock:
+                    last_percent[seed]=percent
+                    overall=100*sum(completed_units.values())/(units_per_seed*len(seeds))
+                    print(f"[{datetime.now().isoformat(timespec='seconds')}] Seed {seed}: {state['completed']}/{state['total']} ({state['percent']:.1f}%) · {state['phase']} | Overall {overall:.1f}%",flush=True)
         archive=client.run(config,archive,client_request_id=f"financial-full-{seed}",show_progress=False,progress_callback=update)
     folder.mkdir(exist_ok=True)
     with zipfile.ZipFile(archive) as zf: zf.extractall(folder)
