@@ -7,8 +7,8 @@ import httpx, yaml
 class BeliefBenchError(RuntimeError): pass
 
 class BeliefBench:
-    def __init__(self,base_url: str,openai_api_key: str | None=None,service_token: str | None=None,timeout: float=1800):
-        self.base_url=base_url.rstrip("/")
+    def __init__(self,base_url: str | None=None,openai_api_key: str | None=None,service_token: str | None=None,timeout: float=1800):
+        self.base_url=(base_url or os.getenv("BELIEFBENCH_API_URL") or "https://beliefbench-api.onrender.com").rstrip("/")
         self.openai_api_key=openai_api_key or os.getenv("OPENAI_API_KEY")
         if not self.openai_api_key: raise ValueError("An OpenAI API key is required; pass openai_api_key or set OPENAI_API_KEY")
         self.service_token=service_token or os.getenv("BELIEFBENCH_SERVICE_TOKEN")
