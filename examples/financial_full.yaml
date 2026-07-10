@@ -4,7 +4,7 @@ repeats: 5
 trajectory_length: 20
 model: gpt-5.4-mini
 llm_mode: api
-max_output_tokens: 70
+max_output_tokens: 150
 concurrency: 5
 standard_rag_top_k: 5
 partial_omit: 2
