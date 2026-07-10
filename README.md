@@ -1,0 +1,22 @@
+# BeliefBench Python SDK
+
+This public repository contains only the thin hosted-service client. The
+probabilistic benchmark engine is not distributed with the package.
+
+```bash
+pip install beliefbench
+export OPENAI_API_KEY='...'
+export BELIEFBENCH_SERVICE_TOKEN='...'
+export BELIEFBENCH_API_URL='https://beliefbench-api.onrender.com'
+```
+
+```python
+import os
+from beliefbench import BeliefBench
+with BeliefBench(os.environ["BELIEFBENCH_API_URL"]) as client:
+    print(client.health())
+    archive=client.run("my_world.yaml")
+```
+
+The OpenAI key is sent only in `X-OpenAI-API-Key` over HTTPS. Do not embed it in
+notebooks, YAML files, source control, or shared result archives.
