@@ -20,3 +20,14 @@ with BeliefBench() as client:
 
 The OpenAI key is sent only in `X-OpenAI-API-Key` over HTTPS. Do not embed it in
 notebooks, YAML files, source control, or shared result archives.
+
+## Financial example
+
+The runnable Bull/Bear/Crisis case study in `examples/` matches the usage guide:
+
+```bash
+python examples/run_financial_case_study.py
+```
+
+It writes `examples/output/financial-example-results.zip` and uses two repeats
+so the repeatability statistic is defined.
