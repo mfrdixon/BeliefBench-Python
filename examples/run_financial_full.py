@@ -15,6 +15,7 @@ spec=yaml.safe_load((HERE/"financial_full.yaml").read_text())
 study=spec.pop("study"); seeds=study["seeds"]
 
 accuracy=[]; decisions=[]
+progress_ref=None; seed_tasks={}
 def run_seed(seed):
     config=dict(spec); config["seed"]=seed
     archive=OUTPUT/f"seed-{seed}.zip"; folder=OUTPUT/f"seed-{seed}"
@@ -29,7 +30,10 @@ def run_seed(seed):
         d=pd.read_csv(folder/"decision_consistency.csv"); d["seed"]=seed
         return a,d
     with BeliefBench(timeout=7200) as client:
-        archive=client.run(config,archive,client_request_id=f"financial-full-{seed}",show_progress=False)
+        def update(state):
+            if progress_ref is not None:
+                progress_ref.update(seed_tasks[seed],total=max(1,state["total"]),completed=state["completed"],description=f"Seed {seed} · {state['phase']}")
+        archive=client.run(config,archive,client_request_id=f"financial-full-{seed}",show_progress=False,progress_callback=update)
     folder.mkdir(exist_ok=True)
     with zipfile.ZipFile(archive) as zf: zf.extractall(folder)
     a=pd.read_csv(folder/"belief_accuracy.csv"); a["seed"]=seed
@@ -37,14 +41,17 @@ def run_seed(seed):
     return a,d
 
 with Progress(
-    TextColumn("[bold blue]Full financial study[/] {task.completed}/{task.total}"),
-    BarColumn(),TimeElapsedColumn(),
+    TextColumn("{task.description:<30}"),BarColumn(),TextColumn("{task.percentage:>5.1f}%"),TimeElapsedColumn(),
 ) as progress:
-    task=progress.add_task("seeds",total=len(seeds))
+    progress_ref=progress
+    task=progress.add_task("Full financial study",total=len(seeds))
+    seed_tasks={seed:progress.add_task(f"Seed {seed} · queued",total=1) for seed in seeds}
     with ThreadPoolExecutor(max_workers=int(study["seed_concurrency"]),thread_name_prefix="belief-seed") as pool:
         futures={pool.submit(run_seed,seed):seed for seed in seeds}
         for future in as_completed(futures):
-            a,d=future.result(); accuracy.append(a); decisions.append(d); progress.advance(task)
+            seed=futures[future]; a,d=future.result(); accuracy.append(a); decisions.append(d)
+            progress.update(seed_tasks[seed],total=1,completed=1,description=f"Seed {seed} · complete")
+            progress.advance(task)
 
 accuracy=pd.concat(accuracy,ignore_index=True); decisions=pd.concat(decisions,ignore_index=True)
 accuracy.to_csv(OUTPUT/"belief_accuracy_all_seeds.csv",index=False)

@@ -23,7 +23,7 @@ per entropy stratum. Run:
 
 ```bash
 pip install numpy pandas
-pip install https://github.com/mfrdixon/BeliefBench-Python/releases/download/v0.4.0/beliefbench-0.4.0-py3-none-any.whl
+pip install https://github.com/mfrdixon/BeliefBench-Python/releases/download/v0.5.0/beliefbench-0.5.0-py3-none-any.whl
 python examples/run_financial_full.py
 ```
 

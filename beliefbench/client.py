@@ -1,7 +1,8 @@
 from __future__ import annotations
 import os
+import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 import httpx, yaml
 from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
 
@@ -18,16 +19,29 @@ class BeliefBench:
     def health(self) -> dict[str,Any]:
         response=self._client.get("/v1/health"); response.raise_for_status(); return response.json()
 
-    def run(self,config: dict[str,Any] | str | Path,output: str | Path="beliefbench-results.zip",client_request_id: str | None=None,show_progress: bool=True) -> Path:
+    def run(self,config: dict[str,Any] | str | Path,output: str | Path="beliefbench-results.zip",client_request_id: str | None=None,show_progress: bool=True,progress_callback: Callable[[dict[str,Any]],None] | None=None,poll_interval: float=2.0) -> Path:
         if isinstance(config,(str,Path)): config=yaml.safe_load(Path(config).read_text())
         headers={"X-OpenAI-API-Key":self.openai_api_key}
         if self.service_token: headers["Authorization"]=f"Bearer {self.service_token}"
         request={"config":config,"client_request_id":client_request_id}
-        if show_progress:
-            with Progress(SpinnerColumn(),TextColumn("[bold blue]Running BeliefBench[/]"),BarColumn(),TimeElapsedColumn()) as progress:
-                progress.add_task("benchmark",total=None)
-                response=self._client.post("/v1/benchmark",json=request,headers=headers)
-        else: response=self._client.post("/v1/benchmark",json=request,headers=headers)
+        response=self._client.post("/v1/jobs",json=request,headers=headers)
+        if response.status_code == 404:
+            response=self._client.post("/v1/benchmark",json=request,headers=headers)
+        elif response.status_code < 400:
+            job_id=response.json()["job_id"]
+            progress_context=Progress(SpinnerColumn(),TextColumn("[bold blue]Running BeliefBench[/]"),BarColumn(),TextColumn("{task.percentage:>5.1f}%"),TimeElapsedColumn()) if show_progress else None
+            if progress_context: progress_context.start(); task_id=progress_context.add_task("benchmark",total=1)
+            try:
+                while True:
+                    status=self._client.get(f"/v1/jobs/{job_id}",headers=headers); status.raise_for_status(); state=status.json()
+                    if progress_callback: progress_callback(state)
+                    if progress_context: progress_context.update(task_id,total=max(1,state["total"]),completed=state["completed"])
+                    if state["status"] == "complete": break
+                    if state["status"] == "failed": raise BeliefBenchError(f"BeliefBench job failed: {state.get('error') or 'unknown error'}")
+                    time.sleep(poll_interval)
+                response=self._client.get(f"/v1/jobs/{job_id}/result",headers=headers)
+            finally:
+                if progress_context: progress_context.stop()
         if response.status_code >= 400:
             try: detail=response.json().get("detail",response.text)
             except ValueError: detail=response.text
