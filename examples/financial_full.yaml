@@ -1,0 +1,60 @@
+seed: 20260710
+scenarios: 45
+repeats: 5
+trajectory_length: 20
+model: gpt-5.4-mini
+llm_mode: api
+max_output_tokens: 70
+concurrency: 5
+standard_rag_top_k: 5
+partial_omit: 2
+entropy_bins: [0.45, 0.75]
+balanced_entropy:
+  per_stratum: 15
+  max_attempts: 200000
+
+study:
+  seeds: [20260710, 20260711, 20260712, 20260713, 20260714, 20260715, 20260716]
+  bootstrap_replicates: 2000
+  confidence_level: 0.95
+  seed_concurrency: 3
+  cluster: [seed, scenario_id]
+
+world:
+  latent_node: Market_State
+  nodes:
+    Market_State:
+      outcomes: [Bull, Bear, Crisis]
+      cpt: [0.50, 0.30, 0.20]
+    Earnings:
+      outcomes: [Strong, Mixed, Weak]
+      parents: [Market_State]
+      cpt: [[0.72,0.23,0.05],[0.20,0.55,0.25],[0.04,0.21,0.75]]
+      templates: ["Corporate earnings were strong.", "Corporate earnings were mixed.", "Corporate earnings weakened."]
+    Credit:
+      outcomes: [Tight, Stable, Wide]
+      parents: [Market_State]
+      cpt: [[0.68,0.27,0.05],[0.18,0.58,0.24],[0.03,0.17,0.80]]
+      templates: ["Credit spreads remained tight.", "Credit spreads were stable.", "Credit spreads widened."]
+    Funding:
+      outcomes: [Easy, Normal, Stressed]
+      parents: [Market_State]
+      cpt: [[0.66,0.29,0.05],[0.16,0.60,0.24],[0.03,0.16,0.81]]
+      templates: ["Funding conditions were easy.", "Funding conditions were normal.", "Funding conditions were stressed."]
+    Activity:
+      outcomes: [Expansion, Flat, Contraction]
+      parents: [Market_State]
+      cpt: [[0.74,0.21,0.05],[0.18,0.57,0.25],[0.04,0.19,0.77]]
+      templates: ["Activity indicated expansion.", "Activity was flat.", "Activity indicated contraction."]
+    Volatility:
+      outcomes: [Low, Elevated, Extreme]
+      parents: [Market_State, Credit]
+      cpt:
+        - [[0.82,0.16,0.02],[0.68,0.28,0.04],[0.35,0.50,0.15]]
+        - [[0.48,0.45,0.07],[0.30,0.58,0.12],[0.12,0.58,0.30]]
+        - [[0.18,0.48,0.34],[0.08,0.42,0.50],[0.02,0.18,0.80]]
+      templates: ["Market volatility was low.", "Market volatility was elevated.", "Market volatility was extreme."]
+
+decision:
+  actions: [Long, Neutral, Cash]
+  payoffs: [[1.0,-0.4,-1.4],[0.35,0.25,-0.25],[0.05,0.20,0.65]]

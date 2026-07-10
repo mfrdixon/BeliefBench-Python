@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 from typing import Any
 import httpx, yaml
+from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
 
 class BeliefBenchError(RuntimeError): pass
 
@@ -17,11 +18,16 @@ class BeliefBench:
     def health(self) -> dict[str,Any]:
         response=self._client.get("/v1/health"); response.raise_for_status(); return response.json()
 
-    def run(self,config: dict[str,Any] | str | Path,output: str | Path="beliefbench-results.zip",client_request_id: str | None=None) -> Path:
+    def run(self,config: dict[str,Any] | str | Path,output: str | Path="beliefbench-results.zip",client_request_id: str | None=None,show_progress: bool=True) -> Path:
         if isinstance(config,(str,Path)): config=yaml.safe_load(Path(config).read_text())
         headers={"X-OpenAI-API-Key":self.openai_api_key}
         if self.service_token: headers["Authorization"]=f"Bearer {self.service_token}"
-        response=self._client.post("/v1/benchmark",json={"config":config,"client_request_id":client_request_id},headers=headers)
+        request={"config":config,"client_request_id":client_request_id}
+        if show_progress:
+            with Progress(SpinnerColumn(),TextColumn("[bold blue]Running BeliefBench[/]"),BarColumn(),TimeElapsedColumn()) as progress:
+                progress.add_task("benchmark",total=None)
+                response=self._client.post("/v1/benchmark",json=request,headers=headers)
+        else: response=self._client.post("/v1/benchmark",json=request,headers=headers)
         if response.status_code >= 400:
             try: detail=response.json().get("detail",response.text)
             except ValueError: detail=response.text
